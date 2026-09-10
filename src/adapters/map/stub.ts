@@ -1,3 +1,5 @@
+import type { StyleSpecification } from "@maplibre/maplibre-gl-style-spec";
+
 import type { MapAdapter } from "./types";
 import { OSM_ATTRIBUTION } from "./osm";
 import { rasterStyle } from "./styles";
@@ -13,7 +15,7 @@ export function createStubMapAdapter(): MapAdapter {
     name: "stub",
     isConfigured: true,
     attribution: OSM_ATTRIBUTION,
-    styleFor(theme) {
+    styleFor(theme): StyleSpecification {
       return {
         version: 8,
         name: `HaulPay stub ${theme}`,

@@ -1,3 +1,5 @@
+import type { StyleSpecification } from "@maplibre/maplibre-gl-style-spec";
+
 import type { Bounds, Position } from "../types";
 
 /**
@@ -8,10 +10,10 @@ import type { Bounds, Position } from "../types";
 export interface MapAdapter {
   readonly name: string;
   /**
-   * A MapLibre style: a URL for a hosted provider, or an inline style object
-   * for a self-hosted `.pmtiles` file.
+   * A MapLibre style: a URL for a hosted provider, or an inline style spec for
+   * a self-hosted `.pmtiles` file.
    */
-  styleFor(theme: "light" | "dark"): string | object;
+  styleFor(theme: "light" | "dark"): string | StyleSpecification;
   /**
    * Required by the ODbL. Rendered visibly on every map view — this is a
    * licence condition, not a nicety, so the adapter is what states it and the
