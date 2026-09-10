@@ -155,7 +155,11 @@ export default function Dashboard() {
           <View style={{ height: space.md }} />
           <Row gap={space.md}>
             <StatCard label="Net pay" value={formatMoney(driver.netPayCents, currency)} signedCents={driver.netPayCents} compact />
-            <StatCard label="Miles" value={formatMiles(driver.totalMiles, units)} compact />
+            {driver.perDiemCents > 0 ? (
+              <StatCard label="Per diem" value={formatMoney(driver.perDiemCents, currency)} compact />
+            ) : (
+              <StatCard label="Miles" value={formatMiles(driver.totalMiles, units)} compact />
+            )}
           </Row>
         </>
       ) : null}
@@ -184,12 +188,16 @@ export default function Dashboard() {
           <View style={{ height: space.md }} />
           <Row gap={space.md}>
             <StatCard label="Net pay" value={formatMoney(driver.netPayCents, currency)} signedCents={driver.netPayCents} compact />
-            <StatCard
-              label="Unpaid miles"
-              value={formatMiles(Math.max(0, driver.totalMiles - driver.paidMiles), units)}
-              tone={driver.totalMiles > driver.paidMiles ? colors.warning : undefined}
-              compact
-            />
+            {driver.perDiemCents > 0 ? (
+              <StatCard label="Per diem" value={formatMoney(driver.perDiemCents, currency)} compact />
+            ) : (
+              <StatCard
+                label="Unpaid miles"
+                value={formatMiles(Math.max(0, driver.totalMiles - driver.paidMiles), units)}
+                tone={driver.totalMiles > driver.paidMiles ? colors.warning : undefined}
+                compact
+              />
+            )}
           </Row>
         </>
       ) : null}

@@ -219,6 +219,8 @@ structure and the edge cases that actually bite:
 - a guaranteed daily minimum that must not manufacture overtime
 - a TONU: a load with zero loaded miles that still made money
 - a load whose paid miles are fewer than the miles actually run
+- per diem paid once per calendar day, not once per load, and only for nights
+  actually spent out
 
 ---
 

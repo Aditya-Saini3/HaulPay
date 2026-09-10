@@ -206,6 +206,12 @@ export default function Reports() {
               value={formatHours(rollup.driver.overtimeHours)}
               valueColor={rollup.driver.overtimeHours > 0 ? colors.warning : undefined}
             />
+            {rollup.driver.perDiemCents > 0 ? (
+              <DetailRow
+                label="Per diem (included)"
+                value={formatMoney(rollup.driver.perDiemCents, currency)}
+              />
+            ) : null}
             <DetailRow label="Gross pay" value={formatMoney(rollup.driver.grossPayCents, currency)} strong />
             <DetailRow
               label="Effective hourly"

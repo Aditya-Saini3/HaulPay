@@ -2,11 +2,28 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 
-import { NO_ACCESSORIAL_PAY, type DriverAccessorialPay, type PayStructure } from "@/earnings";
+import {
+  NO_ACCESSORIAL_PAY,
+  type AccountDefaults,
+  type DriverAccessorialPay,
+  type PayStructure,
+} from "@/earnings";
 import { AccessorialPayForm, PayStructureForm, defaultStructure } from "@/features/pay-structure-form";
 import { useProfile } from "@/store/profile";
 import { useTheme } from "@/theme";
-import { Banner, BottomBar, Button, MoneyField, NumberField, Screen, SectionHeader, TextField, Txt } from "@/ui";
+import {
+  Banner,
+  BottomBar,
+  Button,
+  MoneyField,
+  NumberField,
+  Screen,
+  SectionHeader,
+  Segmented,
+  TextField,
+  Toggle,
+  Txt,
+} from "@/ui";
 
 /**
  * The role-specific setup wizard.
@@ -37,15 +54,31 @@ export default function Setup() {
   const [factoringPercent, setFactoringPercent] = useState<number | null>(null);
   const [fuelPriceCents, setFuelPriceCents] = useState<number | null>(null);
   const [mpg, setMpg] = useState<number | null>(null);
+  const [perDiemCents, setPerDiemCents] = useState<number | null>(null);
+  const [perDiemOvernightOnly, setPerDiemOvernightOnly] = useState(true);
+  const [authority, setAuthority] = useState<"leased_on" | "own_authority">("own_authority");
   const [saving, setSaving] = useState(false);
 
   const finish = async (skip = false) => {
     setSaving(true);
     try {
       if (!skip) {
+        // Everything the wizard collected is persisted. Dispatch and factoring
+        // go on to pre-fill the deduction lines of every new load.
+        const defaults: AccountDefaults = {
+          dispatchPercent,
+          factoringPercent,
+          perDiem:
+            perDiemCents && perDiemCents > 0
+              ? { perDayCents: perDiemCents, overnightOnly: perDiemOvernightOnly }
+              : null,
+          authority: role === "owner_operator" ? authority : null,
+        };
+
         await update({
           payStructure: role === "company_driver" ? structure : null,
           accessorialPay: role === "company_driver" ? accessorials : null,
+          defaults,
           companyName: companyName.trim() || null,
           // Fixed-cost allocation defaults on for people who own the truck and
           // off for drivers, who do not carry it.
@@ -84,6 +117,22 @@ export default function Setup() {
               What you&apos;re owed on top, whichever way the load pays.
             </Txt>
             <AccessorialPayForm value={accessorials} onChange={setAccessorials} />
+
+            <SectionHeader title="Per diem" />
+            <MoneyField
+              label="Per day"
+              hint="Blank for none"
+              cents={perDiemCents}
+              onChange={setPerDiemCents}
+            />
+            {perDiemCents ? (
+              <Toggle
+                label="Nights out only"
+                description="Off pays for every day worked, including days you got home"
+                value={perDiemOvernightOnly}
+                onChange={setPerDiemOvernightOnly}
+              />
+            ) : null}
           </>
         ) : null}
 
@@ -95,6 +144,16 @@ export default function Setup() {
             </Txt>
             <TextField label="Unit number" value={unitNumber} onChangeText={setUnitNumber} placeholder="101" />
             <TextField label="Nickname" value={nickname} onChangeText={setNickname} placeholder="Big Blue" />
+
+            <Segmented
+              label="You run"
+              value={authority}
+              options={[
+                { value: "own_authority" as const, label: "My own authority" },
+                { value: "leased_on" as const, label: "Leased on" },
+              ]}
+              onChange={setAuthority}
+            />
 
             <SectionHeader title="What comes off the top" />
             <NumberField

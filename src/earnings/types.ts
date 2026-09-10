@@ -173,6 +173,19 @@ export interface DriverAccessorialPay {
   layoverPerDayCents: number;
 }
 
+/**
+ * Per diem: a flat per-day allowance a driver is paid on top of their
+ * structure. Priced over distinct days worked rather than per load, since a
+ * two-load Tuesday is still one day away from home.
+ */
+export interface PerDiem {
+  perDayCents: number;
+  /** Only days the driver was away overnight count, when true. */
+  overnightOnly: boolean;
+}
+
+export const NO_PER_DIEM: PerDiem = { perDayCents: 0, overnightOnly: false };
+
 export const NO_ACCESSORIAL_PAY: DriverAccessorialPay = {
   detentionPerHourCents: 0,
   detentionFreeHours: 0,
@@ -238,6 +251,26 @@ export interface ExpenseInput {
   truckId: string | null;
   loadId: string | null;
 }
+
+/**
+ * Account-level defaults captured during setup. Dispatch and factoring are the
+ * two deductions that come off nearly every load, so a new load starts with
+ * them already on it rather than making the driver re-enter them each time.
+ */
+export interface AccountDefaults {
+  dispatchPercent: number | null;
+  factoringPercent: number | null;
+  perDiem: PerDiem | null;
+  /** Informational: whether an owner-operator runs leased on or under their own authority. */
+  authority: "leased_on" | "own_authority" | null;
+}
+
+export const NO_ACCOUNT_DEFAULTS: AccountDefaults = {
+  dispatchPercent: null,
+  factoringPercent: null,
+  perDiem: null,
+  authority: null,
+};
 
 export interface CostPerMileResult {
   fixedCpm: number | null;

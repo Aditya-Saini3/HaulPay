@@ -34,6 +34,7 @@ function emptyProfile(userId: string): Profile {
     weekStart: "sunday",
     payStructure: null,
     accessorialPay: null,
+    defaults: null,
     allocateFixedCosts: true,
     onboardingCompletedAt: null,
   };

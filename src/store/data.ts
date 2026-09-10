@@ -71,6 +71,7 @@ export const useData = create<DataState>((set, get) => ({
       fixedCosts,
       payStructure: profile?.payStructure ?? null,
       ...(profile?.accessorialPay ? { accessorialPay: profile.accessorialPay } : {}),
+      perDiem: profile?.defaults?.perDiem ?? null,
       weekStart: profile?.weekStart ?? "sunday",
       includeFixedCostsOnLoads: profile?.allocateFixedCosts ?? true,
     });

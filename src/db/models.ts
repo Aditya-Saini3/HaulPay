@@ -1,5 +1,6 @@
 import type {
   AccessorialCode,
+  AccountDefaults,
   Currency,
   DeductionCode,
   DistanceUnit,
@@ -34,6 +35,8 @@ export interface Profile {
   weekStart: WeekStart;
   payStructure: PayStructure | null;
   accessorialPay: DriverAccessorialPay | null;
+  /** Dispatch and factoring percentages that pre-fill new loads, per diem, authority. */
+  defaults: AccountDefaults | null;
   allocateFixedCosts: boolean;
   onboardingCompletedAt: string | null;
 }

@@ -7,6 +7,7 @@ import type {
   HourlyStructure,
   LoadInput,
   PayStructure,
+  PerDiem,
   SimpleStructure,
   WorkDay,
 } from "./types";
@@ -260,6 +261,38 @@ export function computeLoadPay(
  */
 export function netPayCents(grossPay: Cents, personalExpenses: Cents): Cents {
   return roundCents(grossPay - personalExpenses);
+}
+
+/**
+ * Per diem over a set of work days.
+ *
+ * Counted per distinct calendar day, so two loads on the same Tuesday pay one
+ * day's allowance rather than two. With `overnightOnly` set, a day only counts
+ * when the driver was still out the next day — a local run home every night
+ * earns no per diem.
+ */
+export function perDiemCents(days: readonly WorkDay[], config: PerDiem | null): Cents {
+  if (!config || config.perDayCents <= 0 || days.length === 0) return 0;
+
+  const unique = [...new Set(days.map((d) => d.day))].sort();
+  if (!config.overnightOnly) return roundCents(unique.length * config.perDayCents);
+
+  // An overnight is a day whose successor is also worked. The final day of a
+  // run is the day the driver got home, so it does not earn one.
+  let overnights = 0;
+  for (let i = 0; i < unique.length - 1; i += 1) {
+    const current = unique[i]!;
+    const next = unique[i + 1]!;
+    if (daysApart(current, next) === 1) overnights += 1;
+  }
+  return roundCents(overnights * config.perDayCents);
+}
+
+function daysApart(from: string, to: string): number {
+  const a = Date.parse(`${from}T00:00:00Z`);
+  const b = Date.parse(`${to}T00:00:00Z`);
+  if (Number.isNaN(a) || Number.isNaN(b)) return 0;
+  return Math.round((b - a) / 86_400_000);
 }
 
 /**

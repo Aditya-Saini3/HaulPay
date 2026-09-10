@@ -12,7 +12,7 @@
  * module refuses to have.
  */
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export const CREATE_TABLES = `
 PRAGMA journal_mode = WAL;
@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   week_start TEXT NOT NULL DEFAULT 'sunday',
   pay_structure TEXT,
   accessorial_pay TEXT,
+  defaults TEXT,
   allocate_fixed_costs INTEGER NOT NULL DEFAULT 1,
   onboarding_completed_at TEXT,
   created_at TEXT NOT NULL,

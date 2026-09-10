@@ -223,6 +223,37 @@ export default function LoadEditor() {
     void expensesRepo.monthlyFixedFor(ownerId(), truckId).then(setMonthlyFixedCents);
   }, [truckId]);
 
+  // A new load starts with the deductions this account already said come off
+  // every load. Editing an existing one uses whatever is stored on it.
+  useEffect(() => {
+    if (id) return;
+    const defaults = profile?.defaults;
+    if (!defaults) return;
+
+    const prefill: LineDraft[] = [];
+    if (defaults.dispatchPercent) {
+      prefill.push({
+        id: newId(),
+        kind: "deduction",
+        code: "dispatch",
+        label: "Dispatch fee",
+        amountCents: null,
+        percentOfGross: defaults.dispatchPercent,
+      });
+    }
+    if (defaults.factoringPercent) {
+      prefill.push({
+        id: newId(),
+        kind: "deduction",
+        code: "factoring",
+        label: "Factoring fee",
+        amountCents: null,
+        percentOfGross: defaults.factoringPercent,
+      });
+    }
+    if (prefill.length > 0) setLines((current) => (current.length === 0 ? prefill : current));
+  }, [id, profile?.defaults]);
+
   /**
    * Rate confirmations and BOLs. The file stays on the device until the upload
    * succeeds, so photographing a rate con in a yard with no signal does not

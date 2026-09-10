@@ -5,10 +5,11 @@ import {
   effectiveHourlyCents,
   loadToPayableWork,
   netPayCents,
+  perDiemCents,
   EMPTY_WORK,
 } from "../pay";
 import type { HybridStructure, PayStructure } from "../types";
-import { accessorial, hourly, makeLoad } from "./helpers";
+import { accessorial, day, hourly, makeLoad } from "./helpers";
 
 describe("per-mile pay", () => {
   it("pays on the payer's miles, not the miles actually run", () => {
@@ -302,5 +303,32 @@ describe("effective hourly rate", () => {
 describe("net pay", () => {
   it("takes the driver's own expenses off gross pay", () => {
     expect(netPayCents(120_000, 18_500)).toBe(101_500);
+  });
+});
+
+describe("per diem", () => {
+  it("pays once per calendar day, not once per load", () => {
+    // Two loads on the same Tuesday is still one day away from home.
+    const days = [day("2026-03-02", 6), day("2026-03-02", 5), day("2026-03-03", 10)];
+    expect(perDiemCents(days, { perDayCents: 6900, overnightOnly: false })).toBe(2 * 6900);
+  });
+
+  it("pays only for nights out when the allowance is overnight-only", () => {
+    // Out Monday, Tuesday, Wednesday, home Wednesday night: two overnights.
+    const days = [day("2026-03-02", 11), day("2026-03-03", 11), day("2026-03-04", 8)];
+    expect(perDiemCents(days, { perDayCents: 6900, overnightOnly: true })).toBe(2 * 6900);
+  });
+
+  it("pays nothing for a local driver home every night", () => {
+    // Days worked but never consecutive, so no night was spent out.
+    const days = [day("2026-03-02", 10), day("2026-03-04", 10), day("2026-03-06", 10)];
+    expect(perDiemCents(days, { perDayCents: 6900, overnightOnly: true })).toBe(0);
+  });
+
+  it("pays nothing when it is not configured", () => {
+    const days = [day("2026-03-02", 10)];
+    expect(perDiemCents(days, null)).toBe(0);
+    expect(perDiemCents(days, { perDayCents: 0, overnightOnly: false })).toBe(0);
+    expect(perDiemCents([], { perDayCents: 6900, overnightOnly: false })).toBe(0);
   });
 });

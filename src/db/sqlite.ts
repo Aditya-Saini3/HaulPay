@@ -38,13 +38,16 @@ async function openAndMigrate(): Promise<SQLite.SQLiteDatabase> {
 /**
  * Forward-only migrations from whatever version is on the device.
  *
- * Version 1 is the initial schema, which `CREATE_TABLES` already produced with
- * IF NOT EXISTS, so there is nothing to do yet. Later versions add their ALTER
- * statements here as new cases.
+ * `CREATE_TABLES` runs first with IF NOT EXISTS, so a fresh install already has
+ * the current shape and every case here is a no-op for it. These exist for
+ * devices carrying an older database, and each one has to tolerate being run
+ * against a table that already has the column.
  */
 async function runMigrations(db: SQLite.SQLiteDatabase, from: number): Promise<void> {
-  if (from < 1) {
-    // Initial schema — created above.
+  if (from > 0 && from < 2) {
+    // v2 added profiles.defaults. SQLite has no ADD COLUMN IF NOT EXISTS, and
+    // a duplicate-column error here is the expected outcome on a fresh install.
+    await db.execAsync("ALTER TABLE profiles ADD COLUMN defaults TEXT").catch(() => undefined);
   }
 }
 

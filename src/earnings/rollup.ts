@@ -8,7 +8,7 @@ import {
 import { computeHourlyPayOverRange, shiftToWorkDay, mergeWorkDays } from "./hours";
 import { computeLoad, type LoadResult } from "./load";
 import { perHour, perMile, roundCents, roundMiles, type Cents, type Miles } from "./money";
-import { computePay, loadToPayableWork, netPayCents, type PayBreakdown } from "./pay";
+import { computePay, loadToPayableWork, netPayCents, perDiemCents, type PayBreakdown } from "./pay";
 import {
   dayKeyOf,
   rangeContains,
@@ -22,6 +22,7 @@ import type {
   FixedCostInput,
   LoadInput,
   PayStructure,
+  PerDiem,
   Role,
   ShiftInput,
   DriverAccessorialPay,
@@ -44,6 +45,7 @@ export interface RollupInput {
   fixedCosts: readonly FixedCostInput[];
   payStructure: PayStructure | null;
   accessorialPay?: DriverAccessorialPay;
+  perDiem?: PerDiem | null;
   weekStart?: WeekStart;
   /** Fixed-cost allocation onto individual loads. Off for company drivers. */
   includeFixedCostsOnLoads?: boolean;
@@ -75,6 +77,8 @@ export interface RevenueRollup {
 
 export interface DriverRollup {
   grossPayCents: Cents;
+  /** Included in gross pay, broken out because it is not taxed the same way. */
+  perDiemCents: Cents;
   personalExpenseCents: Cents;
   netPayCents: Cents;
   regularHours: number;
@@ -217,6 +221,7 @@ export function computeRollup(input: RollupInput): Rollup {
       expenses,
       structure: input.payStructure,
       accessorialPay: input.accessorialPay,
+      perDiem: input.perDiem ?? null,
       weekStart: input.weekStart ?? "sunday",
       payResults,
       paidMiles,
@@ -237,6 +242,7 @@ interface DriverRollupArgs {
   expenses: readonly ExpenseInput[];
   structure: PayStructure;
   accessorialPay: DriverAccessorialPay | undefined;
+  perDiem: PerDiem | null;
   weekStart: WeekStart;
   payResults: { loadId: string; pay: PayBreakdown }[];
   paidMiles: Miles;
@@ -326,11 +332,13 @@ function computeDriverRollup(args: DriverRollupArgs): DriverRollup {
   }
 
   const personalExpenses = roundCents(args.expenses.reduce((s, e) => s + e.amountCents, 0));
-  const gross = roundCents(grossPay);
+  const perDiem = perDiemCents(collectWorkDays(loads, shifts), args.perDiem);
+  const gross = roundCents(grossPay + perDiem);
   const hours = Math.round(hoursWorked * 100) / 100;
 
   return {
     grossPayCents: gross,
+    perDiemCents: perDiem,
     personalExpenseCents: personalExpenses,
     netPayCents: netPayCents(gross, personalExpenses),
     regularHours: Math.round(regularHours * 100) / 100,

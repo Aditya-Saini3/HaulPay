@@ -1,5 +1,6 @@
 import type {
   AccessorialCode,
+  AccountDefaults,
   Currency,
   DeductionCode,
   DistanceUnit,
@@ -49,6 +50,7 @@ export function rowToProfile(row: Row): Profile {
     weekStart: (toText(row.week_start) ?? "sunday") as WeekStart,
     payStructure: toJson<PayStructure | null>(row.pay_structure, null),
     accessorialPay: toJson<DriverAccessorialPay | null>(row.accessorial_pay, null),
+    defaults: toJson<AccountDefaults | null>(row.defaults, null),
     allocateFixedCosts: toBool(row.allocate_fixed_costs),
     onboardingCompletedAt: toText(row.onboarding_completed_at),
   };
@@ -65,6 +67,7 @@ export function profileToRow(profile: Profile): Row {
     week_start: profile.weekStart,
     pay_structure: fromJson(profile.payStructure),
     accessorial_pay: fromJson(profile.accessorialPay),
+    defaults: fromJson(profile.defaults),
     allocate_fixed_costs: fromBool(profile.allocateFixedCosts),
     onboarding_completed_at: profile.onboardingCompletedAt,
   };
