@@ -27,10 +27,12 @@ import {
   Screen,
   Sheet,
   StatusChip,
+  SwipeableRow,
   TextField,
   Txt,
   rangeFor,
   shortLane,
+  type SwipeAction,
 } from "@/ui";
 
 /**
@@ -45,6 +47,7 @@ export default function LoadsScreen() {
   const { colors, space } = useTheme();
   const profile = useProfile((s) => s.profile);
   const trucks = useProfile((s) => s.trucks);
+  const drivers = useProfile((s) => s.drivers);
   const { loads, loadRange } = useData();
 
   const weekStart = profile?.weekStart ?? "sunday";
@@ -54,6 +57,7 @@ export default function LoadsScreen() {
   const [range] = useState<DateRange>(() => rangeFor("quarter", weekStart));
   const [status, setStatus] = useState<LoadStatus | null>(null);
   const [truckId, setTruckId] = useState<string | null>(null);
+  const [driverId, setDriverId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [actionsFor, setActionsFor] = useState<Load | null>(null);
 
@@ -63,18 +67,48 @@ export default function LoadsScreen() {
     }, [range, loadRange]),
   );
 
+  const swipeActionsFor = useCallback(
+    (load: Load): SwipeAction[] => [
+      ...(load.status === "delivered" || load.status === "invoiced" || load.status === "paid"
+        ? []
+        : [
+            {
+              label: "Delivered",
+              icon: "checkmark-circle-outline" as const,
+              tone: "accent" as const,
+              onPress: async () => {
+                await loadsRepo.updateLoadStatus(load.id, "delivered");
+                await loadRange(range);
+              },
+            },
+          ]),
+      {
+        label: "Duplicate",
+        icon: "copy-outline" as const,
+        tone: "info" as const,
+        onPress: async () => {
+          const newId = await loadsRepo.duplicateLoad(load.id);
+          await loadRange(range);
+          if (newId) router.push(`/loads/edit?id=${newId}`);
+        },
+      },
+    ],
+    [range, loadRange],
+  );
+
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return loads.filter((load) => {
       if (status && load.status !== status) return false;
       if (truckId && load.truckId !== truckId) return false;
+      if (driverId && load.driverId !== driverId) return false;
       if (!needle) return true;
       return (
         (load.loadNumber ?? "").toLowerCase().includes(needle) ||
         (load.broker ?? "").toLowerCase().includes(needle)
       );
     });
-  }, [loads, status, truckId, search]);
+  }, [loads, status, truckId, driverId, search]);
 
   const sections = useMemo(() => {
     const byWeek = new Map<string, Load[]>();
@@ -123,6 +157,15 @@ export default function LoadsScreen() {
               onPress={() => setTruckId(truckId === truck.id ? null : truck.id)}
             />
           ))}
+          {drivers.map((driver) => (
+            <Chip
+              key={driver.id}
+              icon="person-outline"
+              label={driver.name}
+              selected={driverId === driver.id}
+              onPress={() => setDriverId(driverId === driver.id ? null : driver.id)}
+            />
+          ))}
         </Row>
       </View>
 
@@ -150,13 +193,15 @@ export default function LoadsScreen() {
           </Row>
         )}
         renderItem={({ item }) => (
-          <LoadRow
-            load={item}
-            currency={currency}
-            units={units}
-            onPress={() => router.push(`/loads/${item.id}`)}
-            onLongPress={() => setActionsFor(item)}
-          />
+          <SwipeableRow actions={swipeActionsFor(item)}>
+            <LoadRow
+              load={item}
+              currency={currency}
+              units={units}
+              onPress={() => router.push(`/loads/${item.id}`)}
+              onLongPress={() => setActionsFor(item)}
+            />
+          </SwipeableRow>
         )}
       />
 

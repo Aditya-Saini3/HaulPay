@@ -5,3 +5,4 @@ export * from "./map";
 export * from "./address";
 export * from "./draggable";
 export * from "./daterange";
+export * from "./swipe";

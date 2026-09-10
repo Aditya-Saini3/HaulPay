@@ -218,10 +218,8 @@ export default function Settings() {
               {
                 text: "Sign out",
                 style: "destructive",
-                onPress: async () => {
-                  await signOut();
-                  router.replace("/");
-                },
+                // Clearing the session is enough: the gate sends us to sign-in.
+                onPress: () => void signOut(),
               },
             ]);
           }}

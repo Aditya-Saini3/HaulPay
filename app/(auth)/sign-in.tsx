@@ -1,5 +1,4 @@
 import * as AppleAuthentication from "expo-apple-authentication";
-import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Platform, View } from "react-native";
 
@@ -33,15 +32,15 @@ export default function SignIn() {
     if (mode === "sign-up") {
       setNotice("Check your email to confirm the account, then sign in.");
       setMode("sign-in");
-      return;
     }
-    router.replace("/");
+    // A successful sign-in changes the session, and the gate in the root
+    // layout moves us on. Navigating here too would flash the wrong group.
   };
 
   const social = async (provider: "apple" | "google") => {
     clearError();
-    const ok = provider === "apple" ? await signInWithApple() : await signInWithGoogle();
-    if (ok) router.replace("/");
+    if (provider === "apple") await signInWithApple();
+    else await signInWithGoogle();
   };
 
   return (

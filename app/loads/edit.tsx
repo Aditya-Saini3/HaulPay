@@ -1,4 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
@@ -10,12 +12,16 @@ import {
   DEDUCTION_CODES,
   LOAD_STATUSES,
   TRAILER_TYPES,
+  type Attachment,
+  type AttachmentKind,
   type Load,
   type LoadLineItemRow,
   type LoadStop,
 } from "@/db/models";
+import * as attachmentsRepo from "@/db/repositories/attachments";
 import * as expensesRepo from "@/db/repositories/expenses";
 import * as loadsRepo from "@/db/repositories/loads";
+import { storagePathFor } from "@/sync";
 import {
   checkBreakeven,
   computeLoad,
@@ -143,6 +149,7 @@ export default function LoadEditor() {
 
   const [monthlyFixedCents, setMonthlyFixedCents] = useState(0);
   const [createdAt, setCreatedAt] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<Attachment[]>([]);
 
   /* ------------------------------------------------------------------ load */
 
@@ -207,6 +214,7 @@ export default function LoadEditor() {
           })),
         );
       }
+      setDocuments(await attachmentsRepo.listAttachments({ loadId: id }));
       setLoading(false);
     })();
   }, [id]);
@@ -214,6 +222,66 @@ export default function LoadEditor() {
   useEffect(() => {
     void expensesRepo.monthlyFixedFor(ownerId(), truckId).then(setMonthlyFixedCents);
   }, [truckId]);
+
+  /**
+   * Rate confirmations and BOLs. The file stays on the device until the upload
+   * succeeds, so photographing a rate con in a yard with no signal does not
+   * lose it.
+   */
+  const attach = async (kind: AttachmentKind, source: "camera" | "file") => {
+    const owner = ownerId();
+    const targetId = id ?? "pending";
+
+    if (source === "camera") {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      const result = permission.granted
+        ? await ImagePicker.launchCameraAsync({ quality: 0.6 })
+        : await ImagePicker.launchImageLibraryAsync({ quality: 0.6 });
+      if (result.canceled || !result.assets[0]) return;
+      const asset = result.assets[0];
+      const fileName = asset.fileName ?? `${kind}.jpg`;
+      setDocuments((current) => [
+        ...current,
+        {
+          id: newId(),
+          ownerId: owner,
+          loadId: null,
+          expenseId: null,
+          kind,
+          storagePath: storagePathFor(owner, "loads", targetId, fileName),
+          localUri: asset.uri,
+          fileName,
+          mimeType: asset.mimeType ?? "image/jpeg",
+          sizeBytes: asset.fileSize ?? null,
+          uploaded: false,
+        },
+      ]);
+      return;
+    }
+
+    const picked = await DocumentPicker.getDocumentAsync({
+      type: ["application/pdf", "image/*"],
+      copyToCacheDirectory: true,
+    });
+    if (picked.canceled || !picked.assets[0]) return;
+    const asset = picked.assets[0];
+    setDocuments((current) => [
+      ...current,
+      {
+        id: newId(),
+        ownerId: owner,
+        loadId: null,
+        expenseId: null,
+        kind,
+        storagePath: storagePathFor(owner, "loads", targetId, asset.name),
+        localUri: asset.uri,
+        fileName: asset.name,
+        mimeType: asset.mimeType ?? "application/pdf",
+        sizeBytes: asset.size ?? null,
+        uploaded: false,
+      },
+    ]);
+  };
 
   /* ----------------------------------------------------- deadhead suggestion */
 
@@ -413,6 +481,19 @@ export default function LoadEditor() {
       }));
 
       await loadsRepo.saveLoad({ ...draftLoad, id: loadId }, stopRows, lineRows);
+
+      for (const document of documents) {
+        await attachmentsRepo.saveAttachment({
+          ...document,
+          loadId,
+          // A document attached before the load had an id was staged under
+          // "pending"; rewrite the path now that the real id exists.
+          storagePath: document.storagePath.includes("/pending/")
+            ? storagePathFor(owner, "loads", loadId, document.fileName ?? "document")
+            : document.storagePath,
+        });
+      }
+
       await refresh();
       router.back();
     } finally {
@@ -693,6 +774,61 @@ export default function LoadEditor() {
           </>
         ) : null}
 
+        {/* --------------------------------------------------------- documents */}
+        <SectionHeader title="Documents" />
+        {documents.map((document) => (
+          <Card key={document.id} style={{ marginBottom: space.sm }}>
+            <Row justify="space-between">
+              <Row gap={space.sm} style={{ flex: 1 }}>
+                <Ionicons name="document-text-outline" size={20} color={colors.textMuted} />
+                <View style={{ flex: 1 }}>
+                  <Txt variant="body" numberOfLines={1}>
+                    {document.fileName ?? document.kind}
+                  </Txt>
+                  <Txt variant="caption" color={colors.textFaint}>
+                    {document.kind.replace("_", " ")}
+                    {document.uploaded ? "" : " · waiting to upload"}
+                  </Txt>
+                </View>
+              </Row>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${document.fileName ?? "document"}`}
+                hitSlop={10}
+                onPress={() =>
+                  setDocuments((current) => current.filter((d) => d.id !== document.id))
+                }
+              >
+                <Ionicons name="close" size={18} color={colors.textMuted} />
+              </Pressable>
+            </Row>
+          </Card>
+        ))}
+        <Row gap={space.md} wrap>
+          <Button
+            label="Rate con"
+            icon="camera-outline"
+            variant="secondary"
+            style={{ flexGrow: 1, flexBasis: "45%" }}
+            onPress={() => attach("rate_confirmation", "camera")}
+          />
+          <Button
+            label="BOL"
+            icon="camera-outline"
+            variant="secondary"
+            style={{ flexGrow: 1, flexBasis: "45%" }}
+            onPress={() => attach("bol", "camera")}
+          />
+          <Button
+            label="Attach a file"
+            icon="folder-outline"
+            variant="secondary"
+            full
+            onPress={() => attach("other", "file")}
+          />
+        </Row>
+
+        <View style={{ height: space.lg }} />
         <TextField label="Notes" value={notes} onChangeText={setNotes} multiline />
 
         {/* ----------------------------------------------------------- preview */}

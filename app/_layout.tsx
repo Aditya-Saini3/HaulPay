@@ -1,4 +1,4 @@
-import { Stack } from "expo-router";
+import { Stack, router, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar";
 
 import { getDatabase } from "@/db/sqlite";
 import * as expensesRepo from "@/db/repositories/expenses";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { useAuth } from "@/store/auth";
 import { ownerId, useProfile } from "@/store/profile";
 import { startSyncManager } from "@/sync";
@@ -48,6 +49,8 @@ export default function RootLayout() {
     };
   }, [initialize, loadProfile]);
 
+  useNavigationGate(ready);
+
   if (!ready) return null;
 
   return (
@@ -59,6 +62,39 @@ export default function RootLayout() {
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
+}
+
+/**
+ * The gate: sign in, then choose a role, then the app.
+ *
+ * It lives in the layout rather than in a route at `/`, because `/` is already
+ * the dashboard inside the (tabs) group and two files cannot own the same path.
+ * One target is computed per render and compared against the group actually on
+ * screen, so there is exactly one redirect and no chance of a loop.
+ *
+ * With no Supabase configured the auth step is skipped entirely — the app runs
+ * on the local mirror alone, which is what makes a fresh clone usable.
+ */
+function useNavigationGate(ready: boolean) {
+  const segments = useSegments();
+  const session = useAuth((s) => s.session);
+  const onboarded = useProfile((s) => Boolean(s.profile?.onboardingCompletedAt));
+
+  useEffect(() => {
+    if (!ready) return;
+
+    const needsAuth = isSupabaseConfigured && !session;
+    const target = needsAuth ? "(auth)" : !onboarded ? "(onboarding)" : "(tabs)";
+    if (segments[0] === target) return;
+
+    router.replace(
+      target === "(auth)"
+        ? "/(auth)/sign-in"
+        : target === "(onboarding)"
+          ? "/(onboarding)/role"
+          : "/(tabs)",
+    );
+  }, [ready, segments, session, onboarded]);
 }
 
 function ThemedStack() {
