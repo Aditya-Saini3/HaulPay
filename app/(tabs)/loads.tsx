@@ -15,7 +15,6 @@ import {
 import type { Load } from "@/db/models";
 import { LOAD_STATUSES } from "@/db/models";
 import * as loadsRepo from "@/db/repositories/loads";
-import { shortLane } from "@/ui";
 import { useData } from "@/store/data";
 import { useProfile } from "@/store/profile";
 import { useTheme } from "@/theme";
@@ -31,6 +30,7 @@ import {
   TextField,
   Txt,
   rangeFor,
+  shortLane,
 } from "@/ui";
 
 /**

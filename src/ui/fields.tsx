@@ -290,7 +290,7 @@ export function Segmented<T extends string>({
   value: T;
   onChange: (value: T) => void;
 }) {
-  const { colors, space, radius, type } = useTheme();
+  const { colors, space, radius } = useTheme();
   return (
     <Field label={label}>
       <View

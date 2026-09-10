@@ -81,7 +81,7 @@ export default function Setup() {
 
             <SectionHeader title="Accessorial pay" />
             <Txt variant="body" color={colors.textMuted} style={{ marginBottom: space.md }}>
-              What you're owed on top, whichever way the load pays.
+              What you&apos;re owed on top, whichever way the load pays.
             </Txt>
             <AccessorialPayForm value={accessorials} onChange={setAccessorials} />
           </>

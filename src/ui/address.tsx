@@ -6,7 +6,7 @@ import { ActivityIndicator, Pressable, StyleSheet, TextInput, View, type TextSty
 import { AdapterError, createDebouncedSearch, geocodeAdapter, type Place, type Position } from "@/adapters";
 import { useTheme } from "@/theme";
 
-import { Field, FieldLabel } from "./fields";
+import { Field } from "./fields";
 import { Row, Txt } from "./primitives";
 
 /**
@@ -319,5 +319,3 @@ export function AddressField({
     </Field>
   );
 }
-
-export { FieldLabel };

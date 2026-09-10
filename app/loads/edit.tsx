@@ -33,7 +33,7 @@ import {
 } from "@/earnings";
 import { haversineMiles } from "@/adapters";
 import { useData } from "@/store/data";
-import { ownerId, useProfile } from "@/store/profile";
+import { ownerId, useProfile, usesShifts } from "@/store/profile";
 import { useTheme } from "@/theme";
 import {
   AddressField,
@@ -60,7 +60,6 @@ import {
   toLocalIso,
   type AddressValue,
 } from "@/ui";
-import { usesShifts } from "@/store/profile";
 
 /**
  * The load form.

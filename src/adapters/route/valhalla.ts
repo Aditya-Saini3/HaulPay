@@ -1,6 +1,6 @@
 import { AdapterError, boundsOf, type Position } from "../types";
 import { decodePolyline, simplify } from "./polyline";
-import type { RouteAdapter, RouteRequest, RouteResult, TruckProfile } from "./types";
+import type { RouteAdapter, RouteRequest, RouteResult } from "./types";
 
 /**
  * Valhalla, using its `truck` costing model.

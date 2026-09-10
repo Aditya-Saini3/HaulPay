@@ -7,7 +7,7 @@ import type { MapAdapter } from "./map/types";
 import { createNominatimAdapter } from "./geocode/nominatim";
 import { createPhotonAdapter } from "./geocode/photon";
 import { createStubGeocodeAdapter } from "./geocode/stub";
-import type { GeocodeAdapter } from "./geocode/types";
+import type { AutocompleteOptions, GeocodeAdapter } from "./geocode/types";
 import { PlaceCache } from "./geocode/cache";
 
 import { createStubRouteAdapter } from "./route/stub";
@@ -15,7 +15,6 @@ import { createValhallaAdapter } from "./route/valhalla";
 import type { RouteAdapter } from "./route/types";
 
 import { AdapterError, type Place, type Position } from "./types";
-import type { AutocompleteOptions } from "./geocode/types";
 
 /**
  * The adapter registry. Screens import from here and never from a concrete

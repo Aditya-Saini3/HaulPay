@@ -39,7 +39,8 @@ export interface MapViewProps {
   routeGeometry?: string | null;
   /** Already-decoded route, when the caller has one in hand. */
   routeLine?: Position[] | null;
-  height?: number;
+  /** Fixed height, or "fill" to expand into a flexed parent. */
+  height?: number | "fill";
   onPinPress?: (id: string) => void;
   interactive?: boolean;
   children?: ReactNode;
@@ -125,7 +126,12 @@ export function MapView({
 
   if (!style) {
     return (
-      <View style={{ height, borderRadius: theme.radius.lg, overflow: "hidden" }}>
+      <View
+        style={[
+          height === "fill" ? { flex: 1 } : { height },
+          { borderRadius: theme.radius.lg, overflow: "hidden" },
+        ]}
+      >
         <EmptyState
           icon="map-outline"
           title="No map style configured"
@@ -140,7 +146,7 @@ export function MapView({
   return (
     <View
       style={{
-        height,
+        ...(height === "fill" ? { flex: 1 } : { height }),
         borderRadius: theme.radius.lg,
         overflow: "hidden",
         backgroundColor: theme.colors.surfaceRaised,

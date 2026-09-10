@@ -87,7 +87,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       "expo-build-properties",
       {
-        ios: { deploymentTarget: "15.1" },
+        // SDK 57 requires iOS 16.4 as its floor.
+        ios: { deploymentTarget: "16.4" },
         android: { minSdkVersion: 24, compileSdkVersion: 36, targetSdkVersion: 36 },
       },
     ],
